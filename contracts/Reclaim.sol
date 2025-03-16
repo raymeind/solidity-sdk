@@ -309,6 +309,8 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 			}
 			require(found, "Signature not appropriate");
 		}
+
+		//@TODO: verify zk proof 
 	}
 
 	function createGroup(
