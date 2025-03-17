@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity ^0.8.20;
 
 import "contracts/Reclaim.sol";
-import "contracts/Addresses.sol";
+import "contracts/lib/Addresses.sol";
 
 contract Attestor {
 	address public reclaimAddress;
