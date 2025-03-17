@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import "contracts/Reclaim.sol";
-import "contracts/Addresses.sol";
+import "solidity-sdk/contracts/Reclaim.sol";
+import "solidity-sdk/contracts/lib/Addresses.sol";
 
 contract Attestor {
 	address public reclaimAddress;
@@ -13,7 +13,7 @@ contract Attestor {
 	}
 
     event ProofContext(bytes32 context);
-    
+
 	function verifyProof(Reclaim.Proof memory proof) public view {
 		Reclaim(reclaimAddress).verifyProof(proof);
 		// Your business logic upon successful verification

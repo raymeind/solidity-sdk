@@ -50,7 +50,7 @@
   },
   "dependencies": {
     "@okxweb3/hardhat-explorer-verify": "^1.6.4",
-    "@openzeppelin/contracts": "^4.9.2",
+    "@openzeppelin/contracts": "^4.9.6",
     "@semaphore-protocol/contracts": "^3.11.1",
     "@semaphore-protocol/data": "^3.11.1",
     "@semaphore-protocol/group": "^3.11.1",
