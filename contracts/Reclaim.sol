@@ -9,6 +9,7 @@ import "./lib/Claims.sol";
 import "./lib/Random.sol";
 import "./lib/StringUtils.sol";
 import "./lib/BytesUtils.sol";
+import "./lib/Verifier.sol"; /* TODO: generate a circuit */
 
 // import "hardhat/console.sol";
 
@@ -72,6 +73,11 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 	 * */
 	mapping(uint256 => bool) createdGroups;
 
+	/**
+	 * zkVerifier address
+	 */
+	address public _verifierAddress = 0x000 /* placeholder */;
+
 	mapping(uint256 => mapping(string => bool)) isUserMerkelized;
 
 	event EpochAdded(Epoch epoch);
@@ -100,10 +106,11 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 	 * @dev This acts as a constructor for the upgradeable proxy contract
 	 */
 	function initialize(address _semaphoreAddress) external initializer {
-		__Ownable_init();
+		// __Ownable_init();
 		epochDurationS = 1 days;
 		currentEpoch = 0;
 		semaphoreAddress = _semaphoreAddress;
+		zkVerifier = Verifier(_verifierAddress);
 	}
 
 	/**
@@ -311,6 +318,15 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 		}
 
 		//@TODO: verify zk proof 
+		bool isProofValid = zkVerifier.verifyProof(
+            proof.zkProof.a,
+            proof.zkProof.b,
+            proof.zkProof.c,
+            proof.zkProof.publicInputs
+        );
+        require(isProofValid, "Zero-knowledge proof verification failed");
+
+        return true;
 	}
 
 	function createGroup(

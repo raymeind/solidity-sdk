@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity ^0.8.20;
 
-import "solidity-sdk/contracts/Reclaim.sol";
-import "solidity-sdk/contracts/lib/Addresses.sol";
+import "../contracts/Reclaim.sol";
+import "../contracts/lib/Addresses.sol";
 
 contract Attestor {
 	address public reclaimAddress;
@@ -21,7 +21,7 @@ contract Attestor {
 		//@TODO: implement business logic
 
 		// just print proof.context for now
-		emit ProofContext(proof.context);
+		// emit ProofContext(proof.context);
 	}
 
     
