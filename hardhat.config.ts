@@ -71,6 +71,11 @@ const config: HardhatUserConfig = {
           }
         }
       : {}),
+    'zksync-sepolia': {
+      url: 'https://sepolia.era.zksync.dev',
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY]: [],
+      chainId: 300,
+    },
     'oasis-sapphire-testnet': {
       url: "https://testnet.sapphire.oasis.io",
       accounts: PRIVATE_KEY ? [PRIVATE_KEY]: [],
