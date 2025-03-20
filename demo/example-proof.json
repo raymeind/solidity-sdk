@@ -1,0 +1,18 @@
+{
+    "claimInfo": {
+        "provider": "http",
+        "context": "{\"contextAddress\":\"1742442913057\",\"contextMessage\":\"\",\"extractedParameters\":{\"username\":\"ash-jyc\"},\"providerHash\":\"0xcb4a6b54d59f97b5891cced83e9e909c938bc06149a22f9e76309f2d20300609\"}",
+        "parameters": "{\"additionalClientOptions\":{},\"body\":\"\",\"geoLocation\":\"\",\"headers\":{\"Sec-Fetch-Mode\":\"same-origin\",\"Sec-Fetch-Site\":\"same-origin\",\"User-Agent\":\"Mozilla/5.0 (iPhone; CPU iPhone OS 18_3_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Safari/604.1\"},\"method\":\"GET\",\"paramValues\":{\"username\":\"ash-jyc\"},\"responseMatches\":[{\"invert\":false,\"type\":\"contains\",\"value\":\"<span class=\\\"color-fg-muted\\\">({{username}})</span>\"}],\"responseRedactions\":[{\"jsonPath\":\"\",\"regex\":\"<span class=\\\"color-fg-muted\\\">\\\\((.*)\\\\)</span>\",\"xPath\":\"\"}],\"url\":\"https://github.com/settings/profile\"}"
+    },
+    "signedClaim": {
+        "signatures": [
+            "0x5a55184f8717a104bad1d46de0158dc949fdc37db43e9f1e21caef374db8774e63ebfcd545a87429d4aa5fbc99f521e03c120457522947c349db35f19c66fda51b"
+        ],
+        "claim": {
+            "identifier": "0x7b4eb3fb39f5bd6cd87169155bb19cfe8452e573b3bc2dc2126085843f5bb8ce",
+            "owner": "0x047a0d46d17f49105518ed4a3c6a2b0a8315fbad",
+            "timestampS": 1742442991,
+            "epoch": 1
+        }
+    }
+}
