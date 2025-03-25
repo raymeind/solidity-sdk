@@ -183,7 +183,12 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 	}
 
 	function createDapp(uint256 id) external {
-		bytes32 dappId = keccak256(abi.encodePacked(msg.sender, id));
+		bytes memory dappData = abi.encodePacked(msg.sender, id);
+		(bool success, bytes memory dappIdMem) = keccak256_precompile_address.staticcall(dappData);
+		require(success, "Keccak256 failed");
+		// Ensure the result length is correct
+		require(dappIdMem.length == 32, "Invalid hash length");
+		bytes32 dappId = abi.decode(dappIdMem, (bytes32));
 		require(dappIdToExternalNullifier[dappId] != id, "Dapp Already Exists");
 		dappIdToExternalNullifier[dappId] = id;
 		emit DappCreated(dappId);
