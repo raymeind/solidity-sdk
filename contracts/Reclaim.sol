@@ -9,7 +9,6 @@ import "./lib/Claims.sol";
 import "./lib/Random.sol";
 import "./lib/StringUtils.sol";
 import "./lib/BytesUtils.sol";
-import "./lib/Verifier.sol"; /* TODO: generate a circuit */
 
 // import "hardhat/console.sol";
 
@@ -77,11 +76,6 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 	 * */
 	mapping(uint256 => bool) createdGroups;
 
-	/**
-	 * zkVerifier address
-	 */
-	address public _verifierAddress = 0x000 /* placeholder */;
-
 	mapping(uint256 => mapping(string => bool)) isUserMerkelized;
 
 	event EpochAdded(Epoch epoch);
@@ -110,11 +104,10 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 	 * @dev This acts as a constructor for the upgradeable proxy contract
 	 */
 	function initialize(address _semaphoreAddress) external initializer {
-		// __Ownable_init();
+		__Ownable_init();
 		epochDurationS = 1 days;
 		currentEpoch = 0;
 		semaphoreAddress = _semaphoreAddress;
-		zkVerifier = Verifier(_verifierAddress);
 	}
 
 	/**
@@ -321,15 +314,6 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 			require(found, "Signature not appropriate");
 		}
 
-		//@TODO: verify zk proof 
-		bool isProofValid = zkVerifier.verifyProof(
-            proof.zkProof.a,
-            proof.zkProof.b,
-            proof.zkProof.c,
-            proof.zkProof.publicInputs
-        );
-        require(isProofValid, "Zero-knowledge proof verification failed");
-
         return true;
 	}
 
@@ -443,6 +427,7 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 		(bool success, bytes memory hashedProvider) = keccak256_precompile_address.staticcall(
 			providerBytes
 		);
+		hashedProvider = abi.encodePacked(hashedProvider);
 		require(success, "Keccak256 failed");
 		// Ensure the result length is correct
     	require(hashedProvider.length == 32, "Invalid hash length");
@@ -456,9 +441,15 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 	function calculateUserParamsHash(
 		string memory provider,
 		string memory params
-	) internal pure returns (bytes32) {
+	) internal view returns (bytes32) {
 		string memory delimiter = ":";
-		bytes32 userParamsHash = keccak256(abi.encodePacked(provider, delimiter, params));
-		return userParamsHash;
+		bytes memory userParams = abi.encodePacked(provider, delimiter, params);
+		(bool success, bytes memory userParamsHash) = keccak256_precompile_address.staticcall(
+			userParams
+		);
+		require(success, "Keccak256 failed");
+		// Ensure the result length is correct
+    	require(userParamsHash.length == 32, "Invalid hash length");
+		return abi.decode(userParamsHash, (bytes32));
 	}
 }
