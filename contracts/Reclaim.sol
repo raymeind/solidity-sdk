@@ -54,6 +54,10 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 	/** address of the semaphore contract */
 	address public semaphoreAddress;
 
+	/** address of keccak256 precompile */
+	address public constant keccak256_precompile_address =
+		0x0000000000000000000000000000000000008010;
+
 	/**
 	 * duration of each epoch.
 	 * is not a hard duration, but useful for
@@ -433,9 +437,15 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 	 */
 	function calculateGroupIdFromProvider(
 		string memory provider
-	) internal pure returns (uint256) {
+	) internal view returns (uint256) {
 		bytes memory providerBytes = bytes(provider);
-		bytes memory hashedProvider = abi.encodePacked(keccak256(providerBytes));
+		// bytes memory hashedProvider = abi.encodePacked(keccak256(providerBytes));
+		(bool success, bytes memory hashedProvider) = keccak256_precompile_address.staticcall(
+			providerBytes
+		);
+		require(success, "Keccak256 failed");
+		// Ensure the result length is correct
+    	require(hashedProvider.length == 32, "Invalid hash length");
 		uint256 groupId = BytesUtils.bytesToUInt(
 			hashedProvider,
 			hashedProvider.length - 4
