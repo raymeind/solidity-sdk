@@ -9,14 +9,27 @@ task('deploy').setAction(async ({}, { ethers, network, upgrades }) => {
   )
   const networkDetails = content['networks'][network.name]
 
-  const {
-    semaphore,
-    pairingAddress,
-    semaphoreVerifierAddress,
-    poseidonAddress,
-    incrementalBinaryTreeAddress
-  } = // @ts-expect-error events
-    (await run('deploy:semaphore')) as ReturnObjectSemaphoreDeployTask
+  console.log("Deploying to network:", network.name);
+  console.log("Using PRIVATE_KEY:", process.env.PRIVATE_KEY ? "Exists" : "Missing");
+  
+  // no deploy:semaphore found??
+  // deploy:semaphore not needed ig if we just somehow plug in an existing semaphore from zksync
+  // const {
+  //   semaphore,
+  //   pairingAddress,
+  //   semaphoreVerifierAddress,
+  //   poseidonAddress,
+  //   incrementalBinaryTreeAddress
+  // } = // @ts-expect-error events
+  //   (await run('deploy:semaphore')) as ReturnObjectSemaphoreDeployTask
+
+  const SemaphoreFactory = await ethers.getContractFactory("Semaphore");
+  const semaphore = await SemaphoreFactory.deploy("");
+  await semaphore.deployed();
+  console.log("Semaphore deployed at:", semaphore.address);
+
+  console.log("Semaphore address:", semaphore?.address);
+
 
   const ReclaimFactory = await ethers.getContractFactory('Reclaim')
   const Reclaim = await upgrades.deployProxy(

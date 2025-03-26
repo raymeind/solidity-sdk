@@ -41,6 +41,12 @@ if (PROVIDER === 'alchemy') {
     INFURA_API_KEY!
   )
 }
+
+console.log("Selected Network:", NETWORK);
+console.log("Provider URL:", provider_url);
+console.log("Private Key (masked):", PRIVATE_KEY ? "Exists" : "Missing");
+
+
 const config: HardhatUserConfig = {
   solidity: {
     version: '0.8.4',
@@ -149,6 +155,11 @@ const config: HardhatUserConfig = {
     'plume-devnet': {
       accounts: PRIVATE_KEY ? [PRIVATE_KEY]: [],
       url:  'https://devnet-rpc.plumenetwork.xyz'
+    },
+    'zksync-sepolia': {
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY]: [],
+      url:  'https://sepolia.era.zksync.dev',
+      chainId: 300,
     }
   },
   typechain: {
@@ -244,7 +255,15 @@ const config: HardhatUserConfig = {
             apiURL: "https://api-alfajores.celoscan.io/api",
             browserURL: "https://alfajores.celoscan.io",
         },
-      }
+      },
+      // {
+      //   network: "zksync-sepolia",
+      //   chainId: 300,
+      //   urls: {
+      //       apiURL: "https://api-alfajores.celoscan.io/api",
+      //       browserURL: "https://sepolia.explorer.zksync.io",
+      //   },
+      // },
     ]
   }
 }
