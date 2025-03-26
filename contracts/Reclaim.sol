@@ -359,6 +359,31 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 		merkelizedUserParams[userParamsHash] = true;
 	}
 
+	function batchMerkelizeUsers(
+		Proof[] calldata proofs, 
+		uint256[] calldata commitments
+	) external {
+		require(proofs.length == commitments.length, "Length mismatch");
+		for (uint i = 0; i < proofs.length; i++) {
+			Proof memory proof = proofs[i];
+			uint256 _identityCommitment = commitments[i];
+			uint256 groupId = calculateGroupIdFromProvider(proof.claimInfo.provider);
+			bytes32 userParamsHash = calculateUserParamsHash(
+				proof.claimInfo.provider,
+				proof.claimInfo.parameters
+			);
+			if (merkelizedUserParams[userParamsHash] == true) {
+				revert Reclaim__UserAlreadyMerkelized();
+			}
+			verifyProof(proof);
+			if (createdGroups[groupId] != true) {
+				createGroup(proof.claimInfo.provider, 20);
+			}
+			SemaphoreInterface(semaphoreAddress).addMember(groupId, _identityCommitment);
+			merkelizedUserParams[userParamsHash] = true;
+		}
+    }
+
 	function verifyMerkelIdentity(
 		string memory provider,
 		uint256 _merkleTreeRoot,
