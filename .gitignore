@@ -9,3 +9,4 @@ coverage
 .DS_store
 artifacts-zk
 cache-zk
+lib/types

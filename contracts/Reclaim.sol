@@ -86,7 +86,13 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
 	bool internal locked;
 
-	mapping(bytes32 => bool) merkelizedUserParams;
+	// mapping(bytes32 => bool) merkelizedUserParams;
+	struct UserMerkelization {
+		bool isMerkelized;
+		uint256 groupId;
+		uint256 commitment;
+	}
+	mapping(bytes32 => UserMerkelization) public userMerkelizations;
 
 	mapping(bytes32 => uint256) dappIdToExternalNullifier;
 
@@ -187,7 +193,7 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 		(bool success, bytes memory dappIdMem) = keccak256_precompile_address.staticcall(dappData);
 		require(success, "Keccak256 failed");
 		// Ensure the result length is correct
-		require(dappIdMem.length == 32, "Invalid hash length");
+		// require(dappIdMem.length == 32, "Invalid hash length");
 		bytes32 dappId = abi.decode(dappIdMem, (bytes32));
 		require(dappIdToExternalNullifier[dappId] != id, "Dapp Already Exists");
 		dappIdToExternalNullifier[dappId] = id;
@@ -264,7 +270,8 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 		string memory params
 	) external view returns (bool) {
 		bytes32 userParamsHash = calculateUserParamsHash(provider, params);
-		return merkelizedUserParams[userParamsHash];
+		// return merkelizedUserParams[userParamsHash];
+		return userMerkelizations[userParamsHash].isMerkelized;
 	}
 
 	/**
@@ -348,7 +355,8 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 			proof.claimInfo.provider,
 			proof.claimInfo.parameters
 		);
-		if (merkelizedUserParams[userParamsHash] == true) {
+		// if (merkelizedUserParams[userParamsHash] == true) {
+		if (userMerkelizations[userParamsHash].isMerkelized) {
 			revert Reclaim__UserAlreadyMerkelized();
 		}
 		verifyProof(proof);
@@ -356,7 +364,8 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 			createGroup(proof.claimInfo.provider, 20);
 		}
 		SemaphoreInterface(semaphoreAddress).addMember(groupId, _identityCommitment);
-		merkelizedUserParams[userParamsHash] = true;
+		// merkelizedUserParams[userParamsHash] = true;
+		userMerkelizations[userParamsHash] = UserMerkelization(true, groupId, _identityCommitment);
 	}
 
 	function batchMerkelizeUsers(
@@ -372,7 +381,8 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 				proof.claimInfo.provider,
 				proof.claimInfo.parameters
 			);
-			if (merkelizedUserParams[userParamsHash] == true) {
+			// if (merkelizedUserParams[userParamsHash] == true) {
+			if (userMerkelizations[userParamsHash].isMerkelized) {
 				revert Reclaim__UserAlreadyMerkelized();
 			}
 			verifyProof(proof);
@@ -380,7 +390,8 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 				createGroup(proof.claimInfo.provider, 20);
 			}
 			SemaphoreInterface(semaphoreAddress).addMember(groupId, _identityCommitment);
-			merkelizedUserParams[userParamsHash] = true;
+			// merkelizedUserParams[userParamsHash] = true;
+			userMerkelizations[userParamsHash] = UserMerkelization(true, groupId, _identityCommitment);
 		}
     }
 
@@ -460,7 +471,7 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 		hashedProvider = abi.encodePacked(hashedProvider);
 		require(success, "Keccak256 failed");
 		// Ensure the result length is correct
-    	require(hashedProvider.length == 32, "Invalid hash length");
+    	// require(hashedProvider.length == 32, "Invalid hash length");
 		uint256 groupId = BytesUtils.bytesToUInt(
 			hashedProvider,
 			hashedProvider.length - 4
@@ -479,7 +490,7 @@ contract Reclaim is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 		);
 		require(success, "Keccak256 failed");
 		// Ensure the result length is correct
-    	require(userParamsHash.length == 32, "Invalid hash length");
+    	// require(userParamsHash.length == 32, "Invalid hash length");
 		return abi.decode(userParamsHash, (bytes32));
 	}
 }
