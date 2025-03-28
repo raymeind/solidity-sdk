@@ -9,7 +9,8 @@
   "scripts": {
     "compile": "hardhat compile",
     "clean": "hardhat clean",
-    "demo": "NODE_OPTIONS=\"--loader ts-node/esm\" npx ts-node demo/merkelizeUser.ts",
+    "mku": "NODE_OPTIONS=\"--loader ts-node/esm\" npx ts-node demo/merkelizeUser.ts",
+    "demo": "NODE_OPTIONS=\"--loader ts-node/esm\" npx ts-node demo/semaphore.ts",
     "deploy": "hardhat run scripts/deploy.ts",
     "test": "hardhat test --network hardhat",
     "run:local": "NETWORK=hardhat hardhat run scripts/local-node.ts",

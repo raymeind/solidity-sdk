@@ -1,0 +1,173 @@
+/** SEMAPHORE IMPORTS */
+import { Group } from "@semaphore-protocol/group";
+import { Identity } from "@semaphore-protocol/identity";
+import { generateProof } from "@semaphore-protocol/proof";
+
+/** ZKSYNC IMPORTS */
+import { ethers } from "ethers";
+import { Provider, Wallet, types } from "zksync-ethers";
+
+/** ENV IMPORTS */
+import { config } from "dotenv";
+config();
+
+const TESTNET_PAYMASTER = '0x3cb2b87d10ac01736a65688f3e0fb1b070b3eea3';
+const PRIVATE_KEY = process.env.PRIVATE_KEY || '';
+const SENDER_ADDRESS = '0xD23A5c7437Ba94aa3958948DE776051c5F00aF1C';
+const SEMAPHORE_CONTRACT_ADDRESS = '0x9E138Ecc8391DCaeD80d45Cc8f020ee77cEBF820';
+
+/** GENERATE PROOF */
+// Create a new identity
+const identity = new Identity(PRIVATE_KEY);
+const { privateKey, publicKey, commitment } = identity;
+// console.log("Private Key:", privateKey);
+// console.log("Public Key:", publicKey);
+// console.log("Commitment:", commitment);
+
+// // Create a group (same as before)
+// const group = new Group();
+// group.addMember(commitment);
+// const merkleProof = group.generateMerkleProof(0);
+// console.log("Merkle Proof:\n", merkleProof);
+
+// const scope = group.root;
+// const message = 1;
+
+// const semaphoreProof = await generateProof(identity, merkleProof, message, scope).then((result) => result).catch((error) => {
+//     console.error("Error generating proof:", error.message);
+//     throw error;
+// });
+// console.log("Semaphore Proof:\n", semaphoreProof);
+
+// const genericProof = {
+//     claimInfo: {
+//         context: '{"contextAddress":"0x0","contextMessage":"0098967F","providerHash":"0xeda3e4cee88b5cbaec045410a0042f99ab3733a4d5b5eb2da5cecc25aa9e9df1"}',
+//         provider: 'http',
+//         parameters: '{"body":"","geoLocation":"in","method":"GET","responseMatches":[{"type":"contains","value":"_steamid\\">Steam ID: 76561198155115943</div>"}],"responseRedactions":[{"jsonPath":"","regex":"_steamid\\">Steam ID: (.*)</div>","xPath":"id(\\"responsive_page_template_content\\")/div[@class=\\"page_header_ctn\\"]/div[@class=\\"page_content\\"]/div[@class=\\"youraccount_steamid\\"]"}],"url":"https://store.steampowered.com/account/"}'
+//     },
+//     signedClaim: {
+//         claim: {
+//             epoch: 1,
+//             identifier: '0x930a5687ac463eb8f048bd203659bd8f73119c534969258e5a7c5b8eb0987b16',
+//             owner: '0xef27fa8830a070aa6e26703be6f17858b61d3fba',
+//             timestampS: 1712685785
+//         },
+//         signatures: [
+//             '0xb246a05693f3e21a70eab5dfd5edc1d0597a160c82b8bf9e24d1f09f9dde9899154bb1672c1bf38193a7829e96e4ed09bc327657bf266e90451f6a90c8b45dfb1c'
+//         ]
+//     }
+// };
+// console.log("Generic Proof:\n", genericProof);
+
+/** CONNECT TO NETWORK */
+const zkSyncProvider = Provider.getDefaultProvider(types.Network.Sepolia);
+const wallet = new Wallet(PRIVATE_KEY, zkSyncProvider);
+const contractABI = [
+  "function merkelizeUser(tuple(tuple(string provider, string parameters, string context) claimInfo, tuple(bytes32 identifier, address owner, uint32 timestampS, uint32 epoch) claim, bytes[] signatures) proof, uint256 _identityCommitment)"
+];
+
+const proof = {
+  claimInfo: {
+      context: '{"contextAddress":"0x0","contextMessage":"0098967F","providerHash":"0xeda3e4cee88b5cbaec045410a0042f99ab3733a4d5b5eb2da5cecc25aa9e9df1"}',
+      provider: 'http',
+      parameters: '{"body":"","geoLocation":"in","method":"GET","responseMatches":[{"type":"contains","value":"_steamid\\">Steam ID: 76561198155115943</div>"}],"responseRedactions":[{"jsonPath":"","regex":"_steamid\\">Steam ID: (.*)</div>","xPath":"id(\\"responsive_page_template_content\\")/div[@class=\\"page_header_ctn\\"]/div[@class=\\"page_content\\"]/div[@class=\\"youraccount_steamid\\"]"}],"url":"https://store.steampowered.com/account/"}'
+  },
+  signedClaim: {
+      claim: {
+          epoch: 1,
+          identifier: '0x930a5687ac463eb8f048bd203659bd8f73119c534969258e5a7c5b8eb0987b16',
+          owner: '0xef27fa8830a070aa6e26703be6f17858b61d3fba',
+          timestampS: 1712685785
+      },
+      signatures: [
+          '0xb246a05693f3e21a70eab5dfd5edc1d0597a160c82b8bf9e24d1f09f9dde9899154bb1672c1bf38193a7829e96e4ed09bc327657bf266e90451f6a90c8b45dfb1c'
+      ]
+  }
+};
+
+// Convert the identifier to bytes32 (use ethers.js to handle this)
+const identifier = ethers.utils.hexlify(ethers.utils.arrayify(proof.signedClaim.claim.identifier));
+
+// Flatten the proof object and prepare parameters for the contract
+const {
+  claimInfo: { provider, parameters, context },
+  signedClaim: {
+    claim: { epoch, owner, timestampS },
+    signatures
+  }
+} = proof;
+
+// Contract interaction to send proof
+const contract = new ethers.Contract('0x7aF625E363eA5e3c13Dc5Ed6b6d7DF0Bb0737d3c', contractABI, wallet);
+
+// Identity commitment (the value that needs to be passed as the second parameter)
+const identityCommitment = commitment;  // Directly use commitment from the Identity class
+
+const merkelizeUserTransaction = async () => {
+  try {
+      const gasEstimate = await contract.estimateGas.merkelizeUser(
+        provider,
+        parameters,
+        context,
+        epoch,
+        identifier,  // Converted to bytes32
+        owner,
+        timestampS,
+        signatures,
+        identityCommitment
+      );
+      console.log(`Estimated Gas: ${gasEstimate.toString()}`);
+
+      // Send the transaction
+      // const tx = await contract.merkelizeUser(
+      //   provider,
+      //   parameters,
+      //   context,
+      //   epoch,
+      //   identifier,
+      //   owner,
+      //   timestampS,
+      //   signatures,
+      //   identityCommitment,
+      //   {
+      //     gasLimit: gasEstimate,  // Include gas estimate here
+      // });
+
+      // console.log("Transaction sent:", tx);
+
+      // // Wait for the transaction to be mined
+      // const receipt = await tx.wait();
+      // console.log("Transaction mined:", receipt);
+  } catch (error) {
+      console.error("Error sending transaction:", error);
+  }
+};
+
+merkelizeUserTransaction();
+
+// /** SEND TRANSACTION */
+// const merkelizeUserTransaction = async () => {
+//     try {
+//         const contract = new ethers.Contract(SEMAPHORE_CONTRACT_ADDRESS, contractABI, wallet);
+
+//         // Estimate gas for merkelizeUser function
+//         const gasEstimate = await contract.estimateGas.merkelizeUser(proofParams, identityCommitment);
+//         console.log(`Estimated Gas: ${gasEstimate.toString()}`);
+
+//         // Send the transaction to merkelize the user
+//         const tx = await contract.merkelizeUser(proofParams, identityCommitment, {
+//             gasLimit: gasEstimate, // Include gas estimate here
+//         });
+
+//         console.log("Transaction sent:", tx);
+
+//         // Wait for the transaction to be mined
+//         const receipt = await tx.wait();
+//         console.log("Transaction mined:", receipt);
+//     } catch (error) {
+//         console.error("Error sending transaction:", error);
+//     }
+// };
+
+// // Call merkelizeUserTransaction to initiate the process
+// merkelizeUserTransaction();
