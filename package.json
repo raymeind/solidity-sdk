@@ -9,8 +9,10 @@
   "scripts": {
     "compile": "hardhat compile",
     "clean": "hardhat clean",
-    "mku": "NODE_OPTIONS=\"--loader ts-node/esm\" npx ts-node demo/merkelizeUser.ts",
-    "demo": "NODE_OPTIONS=\"--loader ts-node/esm\" npx ts-node demo/semaphore.ts",
+    "bad-abi": "NODE_OPTIONS=\"--loader ts-node/esm\" npx ts-node demo/bad-abi.ts",
+    "merkelize-user": "NODE_OPTIONS=\"--loader ts-node/esm\" npx ts-node demo/merkelize-user.ts",
+    "semaphore": "NODE_OPTIONS=\"--loader ts-node/esm\" npx ts-node demo/semaphore.ts",
+    "reclaim-test": "NODE_OPTIONS=\"--loader ts-node/esm\" npx ts-node demo/reclaim-test.ts",
     "deploy": "hardhat run scripts/deploy.ts",
     "test": "hardhat test --network hardhat",
     "run:local": "NETWORK=hardhat hardhat run scripts/local-node.ts",
