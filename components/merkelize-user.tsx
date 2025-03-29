@@ -1,32 +1,41 @@
-import { Identity } from '@semaphore-protocol/identity';
-import { useAccount } from 'wagmi';
-import { useContractWrite, usePrepareContractWrite } from 'wagmi';
-import RECLAIM from '../artifacts/contracts/Reclaim.sol/Reclaim.json';
-import { useEffect, useState } from 'react';
-import { ethers } from 'ethers';
+import { Identity } from '@semaphore-protocol/identity'
+import { useAccount, useSimulateContract, useWriteContract, useConnect, useDisconnect } from 'wagmi'
+import RECLAIM from '../contract-artifacts/Reclaim.json'
+import { useEffect, useState } from 'react'
+import { ethers } from 'ethers'
+import { Button, Spinner } from '@chakra-ui/react'
 
-type ProofObject = {
-  provider: string;
-  context: string;
-  parameters: string[];
-  signatures: string[];
-  identifier: string;
-  ownerPublicKey: string;
-  timestampS: number;
-  epoch: number;
-};
+const ConnectButton = () => {
+  const { address } = useAccount()
+  const { connectors, connect } = useConnect()
+  const { disconnect } = useDisconnect()
 
-export default function MerkelizeUser({ proofObj }: { proofObj: ProofObject }) {
-  const { address } = useAccount();
-  const [identity, setIdentity] = useState<Identity | null>(null);
+  return (
+    <div>
+      {address ? (
+        <button onClick={() => disconnect()}>Disconnect</button>
+      ) : (
+        connectors.map((connector) => (
+          <button key={connector.uid} onClick={() => connect({ connector })}>
+            {connector.name}
+          </button>
+        ))
+      )}
+    </div>
+  )
+}
+
+export default function UserMerkelizer({ proofObj }: any) {
+  const { address } = useAccount()
+  const [identity, setIdentity] = useState<Identity | null>(null)
 
   useEffect(() => {
-    if (!identity && address) {
-      const newIdentity = new Identity(address);
-      setIdentity(newIdentity);
-      console.log('Generated new identity: ', newIdentity);
+    if (address && !identity) {
+      const newIdentity = new Identity(address)
+      setIdentity(newIdentity)
+      console.log('Generated new identity:', newIdentity)
     }
-  }, [identity, address]);
+  }, [address, identity])
 
   const proofReq = {
     claimInfo: {
@@ -38,64 +47,58 @@ export default function MerkelizeUser({ proofObj }: { proofObj: ProofObject }) {
       signatures: proofObj.signatures,
       claim: {
         identifier: proofObj.identifier,
-        owner: ethers.utils.computeAddress(`0x${proofObj.ownerPublicKey}`),
+        owner: proofObj.owner,
         timestampS: proofObj.timestampS,
         epoch: proofObj.epoch
       }
     }
-  };
+  }
 
-  const { config } = usePrepareContractWrite({
-    enabled: !!identity,
-    address: process.env.NEXT_PUBLIC_RECLAIM_CONTRACT_ADDRESS as `0x${string}`,
+  const { data, isSuccess, isPending, error } = useSimulateContract({
+    address: process.env.NEXT_PUBLIC_RECLAIM_CONTRACT_ADDRESS! as `0x${string}`,
     abi: RECLAIM.abi,
     functionName: 'merkelizeUser',
     args: [proofReq, identity?.commitment.toString()],
-    chainId: 420,
-    onSuccess: async (data) => {
-      console.log('Successful - register prepare: ', data);
-      try {
-        const provider = new ethers.providers.JsonRpcProvider(process.env.NEXT_PUBLIC_JSON_RPC_URL);
-        const signer = new ethers.Wallet(process.env.NEXT_PUBLIC_PRIVATE_KEY!, provider);
-        const contract = new ethers.Contract(process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!, RECLAIM.abi, signer);
-        const tx = await contract.airDrop(data);
-        await tx.wait();
-        console.log('Transaction confirmed:', tx.hash);
-      } catch (error) {
-        console.error('Error sending data:', error);
-      }
-    },
-    onError(error: Error) {
-      if (error.message.includes('AlreadyMerkelized')) {
-        console.log('This user is already merkelized!!!!');
-      } else {
-        console.error(error);
-      }
-    }
-  });
+    chainId: 300,
+  })
 
-  const contractWrite = useContractWrite(config);
+  const { writeContract, isPending: isWriting } = useWriteContract()
+
+  async function handleContractWrite() {
+    if (!data?.request) return
+    try {
+      console.log('Transaction request:', data.request)
+      const txHash = await writeContract(data.request)
+      console.log('Transaction sent:', txHash)
+
+      // Only proceed if we need additional on-chain interactions
+      const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_JSON_RPC_URL!)
+      const signer = new ethers.Wallet(process.env.NEXT_PUBLIC_PRIVATE_KEY!, provider)
+      const contract = new ethers.Contract(process.env.NEXT_PUBLIC_RECLAIM_CONTRACT_ADDRESS!, RECLAIM.abi, signer)
+
+      const tx = await contract.airDrop(txHash)
+      await tx.wait()
+      console.log('Transaction confirmed:', tx.hash)
+    } catch (err) {
+      console.error('Error executing contract:', err)
+    }
+  }
 
   return (
     <>
-      {!contractWrite.isSuccess && (
-        <>
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => {
-              contractWrite.write?.()
-            }}
-          >
-            Register Identity
-          </button>
-          {contractWrite.isLoading && ( // Only show the spinner when loading
-            <div className="inline-block ml-2 animate-spin">
-              ⏳
-            </div>
-          )}
-        </>
-      )}
+      <ConnectButton />
+      <Button
+        colorScheme='red'
+        p='10'
+        borderRadius='2xl'
+        onClick={handleContractWrite}
+        disabled={!isSuccess || !data?.request || isWriting}
+      >
+        {isWriting ? <Spinner /> : 'Register Identity'}
+      </Button>
+
+      {isPending && <p>Simulating contract...</p>}
+      {error && <p style={{ color: 'red' }}>Error: {error.message}</p>}
     </>
   )
-
 }
