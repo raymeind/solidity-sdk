@@ -5,20 +5,29 @@ import { useEffect, useState } from 'react'
 import { ethers } from 'ethers'
 import { Button, Spinner } from '@chakra-ui/react'
 
-const ConnectButton = () => {
+export const ConnectButton = () => {
   const { address } = useAccount()
   const { connectors, connect } = useConnect()
   const { disconnect } = useDisconnect()
+  
+  // Track when the component has mounted
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true) // This ensures we render only on the client
+  }, [])
+
+  if (!isClient) return null // Avoid mismatch by not rendering on the server
 
   return (
     <div>
       {address ? (
-        <button onClick={() => disconnect()}>Disconnect</button>
+        <Button onClick={() => disconnect()}>Disconnect</Button>
       ) : (
         connectors.map((connector) => (
-          <button key={connector.uid} onClick={() => connect({ connector })}>
+          <Button key={connector.uid} onClick={() => connect({ connector })}>
             {connector.name}
-          </button>
+          </Button>
         ))
       )}
     </div>
@@ -37,7 +46,7 @@ export default function UserMerkelizer({ proofObj }: any) {
     }
   }, [address, identity])
 
-  const proofReq = {
+  /* const proofReq = {
     claimInfo: {
       provider: proofObj.provider,
       context: proofObj.context,
@@ -52,15 +61,21 @@ export default function UserMerkelizer({ proofObj }: any) {
         epoch: proofObj.epoch
       }
     }
-  }
+  }*/
 
   const { data, isSuccess, isPending, error } = useSimulateContract({
     address: process.env.NEXT_PUBLIC_RECLAIM_CONTRACT_ADDRESS! as `0x${string}`,
     abi: RECLAIM.abi,
     functionName: 'merkelizeUser',
-    args: [proofReq, identity?.commitment.toString()],
+    args: [proofObj, identity?.commitment.toString()],
     chainId: 300,
   })
+
+  useEffect(() => {
+    if (data?.request) {
+      console.log('Transaction request:', data.request)
+    }
+  }, [data])
 
   const { writeContract, isPending: isWriting } = useWriteContract()
 
