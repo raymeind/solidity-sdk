@@ -1,17 +1,47 @@
 {
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "target": "ES2022",
-    "lib": ["ES2022"],
-    "esModuleInterop": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "jsx": "preserve",
+    "strict": true,
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
     "allowSyntheticDefaultImports": true,
-    "strict": false,
-    "skipLibCheck": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@semaphore-protocol/identity": [
+        "./node_modules/@semaphore-protocol/identity"
+      ],
+      "wagmi": [
+        "./node_modules/wagmi"
+      ],
+      "@chakra-ui/react": [
+        "./node_modules/@chakra-ui/react"
+      ],
+      "ethers": [
+        "./node_modules/ethers"
+      ],
+      "../artifacts/contracts/Reclaim.sol/Reclaim.json": [
+        "./artifacts/contracts/Reclaim.sol/Reclaim.json"
+      ],
+      "@/*": ["./src/*"]
+    },
+    "allowJs": true,
+    "incremental": true
   },
-  "include": ["./**/*.ts"],
-  "ts-node": {
-    "esm": true
-  }
+  "include": [
+    "src",
+    "next-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
